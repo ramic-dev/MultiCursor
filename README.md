@@ -1,3 +1,5 @@
+**Italiano** | [English](README.en.md)
+
 # MultiCursor
 
 Piccolo strumento per Windows che aggiunge cursori del mouse supplementari: seguono il cursore vero a distanza fissa e replicano click e rotella in tutti i punti, quasi nello stesso istante.
