@@ -15,16 +15,18 @@ Windows ha un solo cursore di sistema. I cursori aggiuntivi sono quindi finestre
 1. Avvia `MultiCursor.exe`: compare un'icona nell'area di notifica.
 2. Porta il mouse su ogni punto in cui vuoi un cursore e premi `Ctrl+Shift+F1`.
 3. Porta il mouse nel suo punto di partenza e premi `Ctrl+Shift+F2`: i cursori si colorano, seguono il mouse e replicano i tuoi click.
-4. Premi di nuovo `Ctrl+Shift+F2` per mettere in pausa.
+4. Premi di nuovo `Ctrl+Shift+F2` per mettere in pausa i click: i cursori diventano grigi e continuano a seguire il mouse.
+5. Premi `Ctrl+Shift+F8` per fermare i cursori (diventano bianchi) e spostare solo il mouse; premilo di nuovo per riagganciarli alle nuove distanze.
 
 | Scorciatoia predefinita | Comando | Effetto |
 |---|---|---|
-| `Ctrl+Shift+F1` | Add | Aggiunge un cursore dove si trova il mouse (mette in pausa) |
+| `Ctrl+Shift+F1` | Add | Aggiunge un cursore dove si trova il mouse (i cursori si fermano) |
 | `Ctrl+Shift+F7` | Remove | Elimina il cursore più vicino al mouse |
 | `Ctrl+Shift+F3` | Clear | Rimuove tutti i cursori |
-| `Ctrl+Shift+F2` | Toggle | Attiva / mette in pausa |
+| `Ctrl+Shift+F2` | Toggle | Mette in pausa / riattiva i click; i cursori continuano a seguire il mouse. Se sono fermi, li riaggancia con i click attivi |
+| `Ctrl+Shift+F8` | Detach | Ferma i cursori per spostare solo il mouse; di nuovo per riagganciarli |
 | `Ctrl+Shift+F5` | Save | Salva la combinazione corrente |
-| `Ctrl+Shift+F6` | Load | Ricrea la combinazione salvata attorno al mouse e la attiva |
+| `Ctrl+Shift+F6` | Load | Ricrea la combinazione salvata attorno al mouse, alle stesse distanze; i click restano attivi o in pausa come prima |
 | `Ctrl+Shift+F4` | Quit | Chiude il programma |
 
 Lo stesso elenco, con le scorciatoie effettivamente configurate, si apre dalla voce **Aiuto** del menu dell'icona nell'area di notifica (o con un doppio click sull'icona).
@@ -35,7 +37,7 @@ Al primo avvio viene creato `MultiCursor.ini` accanto all'eseguibile. Dopo una m
 
 | Chiave | Significato |
 |---|---|
-| `Add`, `Remove`, `Clear`, `Toggle`, `Save`, `Load`, `Quit` | Scorciatoie: `Ctrl`, `Alt`, `Shift`, `Win` più un tasto (`A`, `F1`, `D1`, `NumPad1`, `Space`, ...) |
+| `Add`, `Remove`, `Clear`, `Toggle`, `Detach`, `Save`, `Load`, `Quit` | Scorciatoie: `Ctrl`, `Alt`, `Shift`, `Win` più un tasto (`A`, `F1`, `D1`, `NumPad1`, `Space`, ...) |
 | `Replicate` | Cosa replicare: `Left`, `Right`, `Middle`, `X1`, `X2`, `Wheel` |
 | `HoldMs` | Durata in millisecondi della pressione su ogni punto (0 = istantanea) |
 | `GapMs` | Pausa in millisecondi tra un punto e l'altro (0 = nessuna) |
@@ -55,7 +57,7 @@ Il comando produce `MultiCursor.exe` nella stessa cartella. L'icona `MultiCursor
 
 ## Limiti
 
-- **Trascinamento:** da attivo, ogni pressione diventa un click istantaneo, quindi non si può trascinare. Metti in pausa per farlo.
+- **Trascinamento:** da attivo, ogni pressione diventa un click istantaneo, quindi non si può trascinare. Metti in pausa i click per farlo.
 - **Giochi:** alcuni giochi non rilevano click a durata zero: prova `HoldMs=20`. I giochi a schermo intero esclusivo non mostrano i cursori aggiuntivi.
 - **Rotella:** tra un punto e l'altro c'è una pausa minima di 1 ms, altrimenti Windows fonde gli scatti in uno solo. Se alcuni scatti si fondono comunque, aumenta `GapMs`.
 - **Finestre amministratore:** per agire su programmi avviati come amministratore, anche MultiCursor va avviato come amministratore.

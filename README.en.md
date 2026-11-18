@@ -17,16 +17,18 @@ Windows has only one system cursor. The extra cursors are therefore small always
 1. Start `MultiCursor.exe`: an icon appears in the notification area.
 2. Move the mouse to each point where you want a cursor and press `Ctrl+Shift+F1`.
 3. Move the mouse to its starting point and press `Ctrl+Shift+F2`: the cursors turn coloured, follow the mouse and replicate your clicks.
-4. Press `Ctrl+Shift+F2` again to pause.
+4. Press `Ctrl+Shift+F2` again to pause clicks: the cursors turn grey and keep following the mouse.
+5. Press `Ctrl+Shift+F8` to stop the cursors (they turn white) and move only the mouse; press it again to re-attach them at the new distances.
 
 | Default shortcut | Command | Effect |
 |---|---|---|
-| `Ctrl+Shift+F1` | Add | Adds a cursor at the mouse position (and pauses) |
+| `Ctrl+Shift+F1` | Add | Adds a cursor at the mouse position (the cursors stop) |
 | `Ctrl+Shift+F7` | Remove | Removes the cursor closest to the mouse |
 | `Ctrl+Shift+F3` | Clear | Removes all cursors |
-| `Ctrl+Shift+F2` | Toggle | Activates / pauses |
+| `Ctrl+Shift+F2` | Toggle | Pauses / resumes clicks; the cursors keep following the mouse. If they are stopped, re-attaches them with clicks on |
+| `Ctrl+Shift+F8` | Detach | Stops the cursors so you can move only the mouse; again to re-attach them |
 | `Ctrl+Shift+F5` | Save | Saves the current layout |
-| `Ctrl+Shift+F6` | Load | Recreates the saved layout around the mouse and activates it |
+| `Ctrl+Shift+F6` | Load | Recreates the saved layout around the mouse at the same distances; clicks stay on or paused as before |
 | `Ctrl+Shift+F4` | Quit | Closes the program |
 
 The same list, with the shortcuts actually configured, opens from the **Aiuto** (Help) entry in the notification-area icon menu, or by double-clicking the icon.
@@ -37,7 +39,7 @@ On first start, `MultiCursor.ini` is created next to the executable. Restart the
 
 | Key | Meaning |
 |---|---|
-| `Add`, `Remove`, `Clear`, `Toggle`, `Save`, `Load`, `Quit` | Shortcuts: `Ctrl`, `Alt`, `Shift`, `Win` plus a key (`A`, `F1`, `D1`, `NumPad1`, `Space`, ...) |
+| `Add`, `Remove`, `Clear`, `Toggle`, `Detach`, `Save`, `Load`, `Quit` | Shortcuts: `Ctrl`, `Alt`, `Shift`, `Win` plus a key (`A`, `F1`, `D1`, `NumPad1`, `Space`, ...) |
 | `Replicate` | What to replicate: `Left`, `Right`, `Middle`, `X1`, `X2`, `Wheel` |
 | `HoldMs` | How long, in milliseconds, each point is held down (0 = instant) |
 | `GapMs` | Pause, in milliseconds, between one point and the next (0 = none) |
@@ -57,7 +59,7 @@ This produces `MultiCursor.exe` in the same folder. The `MultiCursor.ico` icon c
 
 ## Limitations
 
-- **Dragging:** while active, every press becomes an instant click, so you cannot drag. Pause to do so.
+- **Dragging:** while active, every press becomes an instant click, so you cannot drag. Pause clicks to do so.
 - **Games:** some games do not register zero-length clicks: try `HoldMs=20`. Exclusive-fullscreen games do not show the extra cursors.
 - **Wheel:** there is a minimum 1 ms pause between points, otherwise Windows merges the notches into one. If some notches still get merged, increase `GapMs`.
 - **Administrator windows:** to act on programs started as administrator, MultiCursor must be started as administrator too.

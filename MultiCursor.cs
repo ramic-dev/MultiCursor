@@ -173,7 +173,9 @@ class Ghost : Form
         Point[] arrow = new Point[xy.Length / 2];
         for (int i = 0; i < arrow.Length; i++)
             arrow[i] = new Point((int)(xy[2 * i] * scale), (int)(xy[2 * i + 1] * scale));
-        using (Brush b = new SolidBrush(App.Active ? App.ActiveColor : Color.Gray))
+        // Colorato = seguono e cliccano, grigio = seguono senza cliccare, bianco = fermi.
+        Color fill = !App.Following ? Color.White : App.Clicking ? App.ActiveColor : Color.Gray;
+        using (Brush b = new SolidBrush(fill))
             e.Graphics.FillPolygon(b, arrow);
         e.Graphics.DrawPolygon(Pens.Black, arrow);
     }
@@ -197,19 +199,21 @@ class Ghost : Form
 // Finestra nascosta: riceve le scorciatoie e ospita l'hook del mouse.
 class App : Form
 {
-    public static bool Active;
+    // Following = i cursori seguono il mouse; Clicking = replicano i click (solo mentre seguono).
+    public static bool Following, Clicking = true;
     public static Color ActiveColor = Color.OrangeRed;
 
     const string DefaultIni =
         "; MultiCursor - impostazioni (riavviare il programma dopo le modifiche)\r\n" +
         "; Scorciatoie: Ctrl, Alt, Shift, Win + un tasto (A, F1, D1, NumPad1, Space, ...)\r\n" +
-        "; Add    = aggiunge un cursore dove si trova il mouse (mette in pausa)\r\n" +
-        "; Toggle = attiva/disattiva: da attivo i cursori seguono il mouse e replicano i click\r\n" +
+        "; Add    = aggiunge un cursore dove si trova il mouse (i cursori si fermano)\r\n" +
+        "; Toggle = mette in pausa / riattiva i click; i cursori continuano a seguire il mouse\r\n" +
         "; Clear  = rimuove tutti i cursori\r\n" +
         "; Quit   = chiude il programma\r\n" +
         "; Save   = salva la combinazione corrente (distanze dei cursori dal mouse)\r\n" +
-        "; Load   = ricrea la combinazione salvata attorno al mouse e la attiva\r\n" +
+        "; Load   = ricrea la combinazione salvata attorno al mouse, alle stesse distanze\r\n" +
         "; Remove = elimina il cursore piu' vicino al mouse\r\n" +
+        "; Detach = ferma i cursori per spostare solo il mouse; di nuovo per riagganciarli\r\n" +
         "Add=Ctrl+Shift+F1\r\n" +
         "Toggle=Ctrl+Shift+F2\r\n" +
         "Clear=Ctrl+Shift+F3\r\n" +
@@ -217,6 +221,7 @@ class App : Form
         "Save=Ctrl+Shift+F5\r\n" +
         "Load=Ctrl+Shift+F6\r\n" +
         "Remove=Ctrl+Shift+F7\r\n" +
+        "Detach=Ctrl+Shift+F8\r\n" +
         "; Cosa replicare sui cursori aggiuntivi: Left, Right, Middle, X1, X2, Wheel\r\n" +
         "Replicate=Left,Right,Middle,X1,X2,Wheel\r\n" +
         "; HoldMs = durata della pressione su ogni punto, GapMs = pausa tra un punto e l'altro.\r\n" +
@@ -226,17 +231,18 @@ class App : Form
         "; Colore dei cursori quando attivi (nome colore .NET: OrangeRed, Lime, Cyan, ...)\r\n" +
         "Color=OrangeRed\r\n";
 
-    static readonly string[] Actions = { "Add", "Toggle", "Clear", "Quit", "Save", "Load", "Remove" };
+    static readonly string[] Actions = { "Add", "Toggle", "Clear", "Quit", "Save", "Load", "Remove", "Detach" };
     static readonly string[] Descriptions = {
-        "aggiunge un cursore dove si trova il mouse (mette in pausa)",
-        "attiva / mette in pausa: da attivo i cursori seguono il mouse e replicano click e rotella",
+        "aggiunge un cursore dove si trova il mouse (i cursori si fermano)",
+        "mette in pausa / riattiva i click; i cursori continuano a seguire il mouse",
         "rimuove tutti i cursori",
         "chiude il programma",
         "salva la combinazione corrente",
-        "ricrea la combinazione salvata attorno al mouse e la attiva",
-        "elimina il cursore piu' vicino al mouse" };
+        "ricrea la combinazione salvata attorno al mouse, alle stesse distanze",
+        "elimina il cursore piu' vicino al mouse",
+        "ferma i cursori per spostare solo il mouse; di nuovo per riagganciarli" };
     // Ordine in cui i comandi compaiono nell'aiuto.
-    static readonly int[] HelpOrder = { 0, 6, 2, 1, 4, 5, 3 };
+    static readonly int[] HelpOrder = { 0, 6, 2, 1, 7, 4, 5, 3 };
     readonly string[] specs = new string[Actions.Length];
     string replicateText;
     bool helpOpen;
@@ -375,13 +381,14 @@ class App : Form
         {
             switch ((int)m.WParam)
             {
-                case 0: SetActive(false); AddGhost(Cursor.Position); UpdateTray(); break;
-                case 1: SetActive(!Active); break;
+                case 0: SetFollowing(false); AddGhost(Cursor.Position); UpdateTray(); break;
+                case 1: ToggleClicks(); break;
                 case 2: ClearGhosts(); break;
                 case 3: Quit(); break;
                 case 4: SaveLayout(); break;
                 case 5: LoadLayout(); break;
                 case 6: RemoveNearest(); break;
+                case 7: if (ghosts.Count > 0) SetFollowing(!Following); break;
             }
         }
         base.WndProc(ref m);
@@ -398,7 +405,7 @@ class App : Form
     void RemoveNearest()
     {
         if (ghosts.Count == 0) return;
-        Point c = Active ? lastReal : Cursor.Position;
+        Point c = Following ? lastReal : Cursor.Position;
         int best = 0;
         long bestDist = long.MaxValue;
         for (int i = 0; i < ghosts.Count; i++)
@@ -409,7 +416,7 @@ class App : Form
         }
         ghosts[best].Dispose();
         ghosts.RemoveAt(best);
-        if (ghosts.Count == 0) SetActive(false);
+        if (ghosts.Count == 0) SetFollowing(false);
         UpdateTray();
     }
 
@@ -420,8 +427,9 @@ class App : Form
         foreach (int i in HelpOrder) sb.Append(specs[i] + "  -  " + Descriptions[i] + "\n");
         sb.Append("\nUso\n\n" +
             "1. Porta il mouse su ogni punto voluto e aggiungi un cursore.\n" +
-            "2. Porta il mouse nel suo punto di partenza e attiva: i cursori diventano colorati e lo seguono.\n" +
-            "3. Metti in pausa per trascinare o per riposizionare.\n\n" +
+            "2. Porta il mouse nel suo punto di partenza e attiva i click: i cursori diventano colorati e lo seguono.\n" +
+            "3. Metti in pausa i click per trascinare: i cursori diventano grigi e continuano a seguire.\n" +
+            "4. Ferma i cursori (diventano bianchi) per spostare solo il mouse, poi riagganciali.\n\n" +
             "Replicati: " + replicateText + "\n\n" +
             "Scorciatoie, tasti replicati, tempi e colore si cambiano in:\n" + IniPath + "\n(riavviare il programma dopo le modifiche)");
         helpOpen = true;
@@ -433,20 +441,34 @@ class App : Form
 
     void ClearGhosts()
     {
-        SetActive(false);
+        SetFollowing(false);
         foreach (Ghost g in ghosts) g.Dispose();
         ghosts.Clear();
         UpdateTray();
     }
 
-    void SetActive(bool on)
+    // Riagganciando, le distanze dal mouse sono quelle che i cursori hanno in quel momento.
+    void SetFollowing(bool on)
     {
-        if (on)
+        if (on && !Following)
         {
             lastReal = Cursor.Position;
             foreach (Ghost g in ghosts) g.Offset = new Point(g.Pos.X - lastReal.X, g.Pos.Y - lastReal.Y);
         }
-        Active = on;
+        Following = on;
+        Redraw();
+    }
+
+    // Da fermi riaggancia i cursori con i click attivi; altrimenti alterna solo i click.
+    void ToggleClicks()
+    {
+        if (ghosts.Count == 0) return;
+        if (!Following) { Clicking = true; SetFollowing(true); }
+        else { Clicking = !Clicking; Redraw(); }
+    }
+
+    void Redraw()
+    {
         foreach (Ghost g in ghosts) g.Invalidate();
         UpdateTray();
     }
@@ -454,7 +476,7 @@ class App : Form
     void SaveLayout()
     {
         if (ghosts.Count == 0) { Notify("Nessun cursore da salvare"); return; }
-        Point c = Active ? lastReal : Cursor.Position;
+        Point c = Following ? lastReal : Cursor.Position;
         StringBuilder sb = new StringBuilder();
         foreach (Ghost g in ghosts) sb.Append((g.Pos.X - c.X) + "," + (g.Pos.Y - c.Y) + "\r\n");
         try
@@ -482,7 +504,8 @@ class App : Form
         ClearGhosts();
         Point c = Cursor.Position;
         foreach (Point o in offsets) AddGhost(new Point(c.X + o.X, c.Y + o.Y));
-        SetActive(true);
+        // I click restano nello stato in cui erano (attivi o in pausa).
+        SetFollowing(true);
     }
 
     void Notify(string text)
@@ -492,7 +515,8 @@ class App : Form
 
     void UpdateTray()
     {
-        tray.Text = "MultiCursor - " + (Active ? "attivo" : "in pausa") + " - cursori: " + ghosts.Count;
+        string state = !Following ? "fermi" : Clicking ? "attivo" : "click in pausa";
+        tray.Text = "MultiCursor - " + state + " - cursori: " + ghosts.Count;
     }
 
     void Quit()
@@ -507,7 +531,7 @@ class App : Form
     void UpdateGhosts()
     {
         updatePending = false;
-        if (Active) Ghost.MoveAll(ghosts, lastReal);
+        if (Following) Ghost.MoveAll(ghosts, lastReal);
     }
 
     // L'hook deve tornare subito: qualunque attesa qui dentro rallenta il cursore di sistema.
@@ -517,11 +541,12 @@ class App : Form
             return Native.CallNextHookEx(hook, code, wParam, lParam);   // gli eventi iniettati (i nostri) passano intatti
 
         int msg = (int)wParam;
-        bool armed = Active && ghosts.Count > 0;
+        bool following = Following && ghosts.Count > 0;
+        bool armed = following && Clicking;
 
         if (msg == Native.WM_MOUSEMOVE)
         {
-            if (armed)
+            if (following)
             {
                 // Durante una raffica il movimento fisico viene scartato, altrimenti sposterebbe i click.
                 if (Clicker.Busy) return (IntPtr)1;
